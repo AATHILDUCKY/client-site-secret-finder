@@ -83,48 +83,174 @@ window.SECRET_FINDER_DATA = {
     },
     {
       "name": "GitHub Personal Access Token",
-      "regex": "\\bghp_[a-zA-Z0-9]{36}\\b",
+      "regex": "\\bghp_[a-zA-Z0-9]{36,255}\\b",
       "flags": "g",
       "severity": "CRITICAL",
       "confidence": "HIGH",
       "minLength": 39,
-      "maxLength": 39
+      "maxLength": 259
     },
     {
       "name": "GitHub OAuth Token",
-      "regex": "\\bgho_[a-zA-Z0-9]{36}\\b",
+      "regex": "\\bgho_[a-zA-Z0-9]{36,255}\\b",
       "flags": "g",
       "severity": "CRITICAL",
       "confidence": "HIGH",
       "minLength": 39,
-      "maxLength": 39
+      "maxLength": 259
     },
     {
       "name": "GitHub App Token",
-      "regex": "\\bghu_[a-zA-Z0-9]{36}\\b",
+      "regex": "\\bghu_[a-zA-Z0-9]{36,255}\\b",
       "flags": "g",
       "severity": "CRITICAL",
       "confidence": "HIGH",
       "minLength": 39,
-      "maxLength": 39
+      "maxLength": 259
     },
     {
       "name": "GitHub Refresh Token",
-      "regex": "\\bghr_[a-zA-Z0-9]{36}\\b",
+      "regex": "\\bghr_[a-zA-Z0-9]{36,255}\\b",
       "flags": "g",
       "severity": "CRITICAL",
       "confidence": "HIGH",
       "minLength": 39,
-      "maxLength": 39
+      "maxLength": 259
     },
     {
-      "name": "GitLab Personal Access Token",
-      "regex": "\\bglpat-[a-zA-Z0-9\\-_]{20}\\b",
+      "name": "GitHub App Installation Token",
+      "regex": "\\bghs_[a-zA-Z0-9]{36,255}\\b",
       "flags": "g",
       "severity": "CRITICAL",
       "confidence": "HIGH",
-      "minLength": 24,
-      "maxLength": 26
+      "minLength": 40,
+      "maxLength": 259
+    },
+    {
+      "name": "GitHub Fine-Grained PAT",
+      "regex": "\\bgithub_pat_[a-zA-Z0-9_]{20,255}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 31,
+      "maxLength": 266
+    },
+    {
+      "name": "GitLab Personal Access Token",
+      "regex": "\\bglpat-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 26,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab OAuth Secret",
+      "regex": "\\bgloas-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 26,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Deploy Token",
+      "regex": "\\bgldt-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 25,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Runner Auth Token",
+      "regex": "\\bglrtr?-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 25,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab CI/CD Job Token",
+      "regex": "\\bglcbt-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 26,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Trigger Token",
+      "regex": "\\bglptt-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 26,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Feed Token",
+      "regex": "\\bglft-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 25,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Incoming Mail Token",
+      "regex": "\\bglimt-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 26,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Agent Token",
+      "regex": "\\bglagent-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 28,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab SCIM Token",
+      "regex": "\\bglsoat-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 27,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Feature Flag Token",
+      "regex": "\\bglffct-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 27,
+      "maxLength": 160
+    },
+    {
+      "name": "GitLab Session Cookie",
+      "regex": "_gitlab_session=[a-zA-Z0-9%._\\-]{20,}",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 35,
+      "maxLength": 300
+    },
+    {
+      "name": "GitLab Workspace Token",
+      "regex": "\\bglwt-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 25,
+      "maxLength": 160
     },
     {
       "name": "GitHub Client ID",
@@ -145,6 +271,15 @@ window.SECRET_FINDER_DATA = {
       "maxLength": 40
     },
     {
+      "name": "AWS STS Access Key ID",
+      "regex": "\\bASIA[0-9A-Z]{16}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 20,
+      "maxLength": 20
+    },
+    {
       "name": "Azure API Key",
       "regex": "x-api-key:\\s*([a-zA-Z0-9-_]{32,})",
       "flags": "gi",
@@ -161,6 +296,15 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 32,
       "maxLength": 32
+    },
+    {
+      "name": "Azure Storage Account Key",
+      "regex": "accountkey[:=\\s]+['\"]?([A-Za-z0-9+/]{86,88}={0,2})['\"]?",
+      "flags": "gi",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 86,
+      "maxLength": 90
     },
     {
       "name": "Stripe Secret Key",
@@ -188,6 +332,24 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 32,
       "maxLength": 40
+    },
+    {
+      "name": "Stripe Test Secret Key",
+      "regex": "\\bsk_test_[0-9a-zA-Z]{24,}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 32,
+      "maxLength": 100
+    },
+    {
+      "name": "Stripe Test Restricted Key",
+      "regex": "\\brk_test_[0-9a-zA-Z]{24,}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 32,
+      "maxLength": 100
     },
     {
       "name": "Twilio Account SID",
@@ -249,6 +411,24 @@ window.SECRET_FINDER_DATA = {
       "maxLength": 60
     },
     {
+      "name": "Slack User Token (xoxp)",
+      "regex": "\\bxoxp-[a-zA-Z0-9-]{10,200}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 14,
+      "maxLength": 220
+    },
+    {
+      "name": "Slack App-Level Token",
+      "regex": "\\bxapp-[0-9A-Za-z-]{20,200}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 25,
+      "maxLength": 220
+    },
+    {
       "name": "Slack Webhook URL",
       "regex": "https://hooks\\.slack\\.com/services/T[a-zA-Z0-9]+/B[a-zA-Z0-9]+/[a-zA-Z0-9]+",
       "flags": "g",
@@ -276,6 +456,24 @@ window.SECRET_FINDER_DATA = {
       "maxLength": 36
     },
     {
+      "name": "Brevo/Sendinblue API Key",
+      "regex": "\\bxkeysib-[a-zA-Z0-9\\-_]{32,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 40,
+      "maxLength": 200
+    },
+    {
+      "name": "Google OAuth Client Secret",
+      "regex": "\\bGOCSPX-[a-zA-Z0-9\\-_]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 27,
+      "maxLength": 120
+    },
+    {
       "name": "MongoDB Connection String",
       "regex": "mongodb(\\+srv)?://[^\\s\"']+",
       "flags": "g",
@@ -301,6 +499,24 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 20,
       "maxLength": 200
+    },
+    {
+      "name": "SQL Server Connection String",
+      "regex": "sqlserver://[^\\s\"']+",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 20,
+      "maxLength": 240
+    },
+    {
+      "name": "AMQP Connection String",
+      "regex": "amqps?://[^\\s\"']+",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 20,
+      "maxLength": 240
     },
     {
       "name": "Redis Connection String",
@@ -346,6 +562,78 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 50,
       "maxLength": 500
+    },
+    {
+      "name": "OpenAI Project API Key",
+      "regex": "\\bsk-proj-[a-zA-Z0-9\\-_]{20,200}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 28,
+      "maxLength": 208
+    },
+    {
+      "name": "OpenAI Service Account Key",
+      "regex": "\\bsk-svcacct-[a-zA-Z0-9\\-_]{20,200}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 31,
+      "maxLength": 211
+    },
+    {
+      "name": "Anthropic API Key",
+      "regex": "\\bsk-ant-(?:api\\d{2}-)?[a-zA-Z0-9\\-_]{20,200}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 27,
+      "maxLength": 220
+    },
+    {
+      "name": "Hugging Face Access Token",
+      "regex": "\\bhf_[a-zA-Z0-9]{30,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 33,
+      "maxLength": 120
+    },
+    {
+      "name": "PyPI API Token",
+      "regex": "\\bpypi-[A-Za-z0-9\\-_]{60,120}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 65,
+      "maxLength": 130
+    },
+    {
+      "name": "NPM Granular Token",
+      "regex": "\\bnpm_[a-zA-Z0-9]{36}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 40,
+      "maxLength": 40
+    },
+    {
+      "name": "Linear API Key",
+      "regex": "\\blin_api_[a-zA-Z0-9]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 28,
+      "maxLength": 120
+    },
+    {
+      "name": "Linear OAuth Token",
+      "regex": "\\blin_oauth_[a-zA-Z0-9]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 30,
+      "maxLength": 120
     },
     {
       "name": "Facebook Access Token",
@@ -400,6 +688,15 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 36,
       "maxLength": 36
+    },
+    {
+      "name": "Shopify Storefront Token",
+      "regex": "\\bshpss_[a-fA-F0-9]{32}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 38,
+      "maxLength": 38
     },
     {
       "name": "Twilio Account SID Full",
@@ -902,6 +1199,537 @@ window.SECRET_FINDER_DATA = {
       "maxLength": 5000
     },
     {
+      "name": "AWS Access Key ID (Alt Prefixes)",
+      "regex": "\\b(?:A3T[A-Z0-9]|ABIA|ACCA)[A-Z2-7]{16}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 20,
+      "maxLength": 20
+    },
+    {
+      "name": "AWS Bedrock API Key",
+      "regex": "\\bABSK[A-Za-z0-9+/]{109,269}={0,2}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 113,
+      "maxLength": 275
+    },
+    {
+      "name": "Alibaba Cloud Access Key ID",
+      "regex": "\\bLTAI[a-zA-Z0-9]{20}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 24,
+      "maxLength": 24
+    },
+    {
+      "name": "Azure AD Client Secret",
+      "regex": "(?:^|[^A-Za-z0-9_~.])([A-Za-z0-9_~.]{3}\\dQ~[A-Za-z0-9_~.-]{31,34})(?:$|[^A-Za-z0-9_~.-])",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 37,
+      "maxLength": 40
+    },
+    {
+      "name": "1Password Secret Key",
+      "regex": "\\bA3-[A-Z0-9]{6}-(?:[A-Z0-9]{11}|[A-Z0-9]{6}-[A-Z0-9]{5})-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 40,
+      "maxLength": 45
+    },
+    {
+      "name": "1Password Service Account Token",
+      "regex": "\\bops_eyJ[a-zA-Z0-9+/]{250,}={0,3}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 257,
+      "maxLength": 5000
+    },
+    {
+      "name": "Age Secret Key",
+      "regex": "\\bAGE-SECRET-KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{58}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 60,
+      "maxLength": 80
+    },
+    {
+      "name": "Atlassian API Token (ATATT3)",
+      "regex": "\\bATATT3[A-Za-z0-9_\\-=]{186}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 192,
+      "maxLength": 192
+    },
+    {
+      "name": "Artifactory API Key",
+      "regex": "\\bAKCp[A-Za-z0-9]{69}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 73,
+      "maxLength": 73
+    },
+    {
+      "name": "Artifactory Reference Token",
+      "regex": "\\bcmVmd[A-Za-z0-9]{59}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    {
+      "name": "Airtable Personal Access Token",
+      "regex": "\\bpat[A-Za-z0-9]{14}\\.[A-Fa-f0-9]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 82,
+      "maxLength": 82
+    },
+    {
+      "name": "Bitbucket Client ID",
+      "regex": "bitbucket[_-]?(client[_-]?id|id)[:=\\s]+['\"]?([a-zA-Z0-9]{32})['\"]?",
+      "flags": "gi",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 32,
+      "maxLength": 32
+    },
+    {
+      "name": "Bitbucket Client Secret",
+      "regex": "bitbucket[_-]?(client[_-]?secret|secret)[:=\\s]+['\"]?([a-zA-Z0-9_\\-=]{64})['\"]?",
+      "flags": "gi",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    {
+      "name": "Cloudflare Origin CA Key",
+      "regex": "\\bv1\\.0-[a-f0-9]{24}-[a-f0-9]{146}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 176,
+      "maxLength": 176
+    },
+    {
+      "name": "Databricks API Token",
+      "regex": "\\bdapi[a-f0-9]{32}(?:-\\d)?\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 36,
+      "maxLength": 38
+    },
+    {
+      "name": "DigitalOcean OAuth Access Token",
+      "regex": "\\bdoo_v1_[a-f0-9]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    {
+      "name": "DigitalOcean PAT (dop_v1)",
+      "regex": "\\bdop_v1_[a-f0-9]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    {
+      "name": "DigitalOcean Refresh Token",
+      "regex": "\\bdor_v1_[a-f0-9]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    {
+      "name": "Docker Hub PAT",
+      "regex": "\\bdckr_pat_[a-zA-Z0-9_-]{27}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    {
+      "name": "Docker Hub OAT",
+      "regex": "\\bdckr_oat_[a-zA-Z0-9_-]{32}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 41,
+      "maxLength": 41
+    },
+    {
+      "name": "Doppler Service Token",
+      "regex": "\\bdp\\.pt\\.[a-zA-Z0-9]{43}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 49,
+      "maxLength": 49
+    },
+    {
+      "name": "Dynatrace API Token",
+      "regex": "\\bdt0c01\\.[a-z0-9]{24}\\.[a-z0-9]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 96,
+      "maxLength": 96
+    },
+    {
+      "name": "EasyPost API Key",
+      "regex": "\\bEZAK[a-zA-Z0-9]{54}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 58,
+      "maxLength": 58
+    },
+    {
+      "name": "EasyPost Test API Key",
+      "regex": "\\bEZTK[a-zA-Z0-9]{54}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 58,
+      "maxLength": 58
+    },
+    {
+      "name": "Fly.io Access Token (fo1)",
+      "regex": "\\bfo1_[A-Za-z0-9_-]{43}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 47,
+      "maxLength": 47
+    },
+    {
+      "name": "Fly.io Machine Token (fm1a/fm1r)",
+      "regex": "\\bfm1[ar]_[A-Za-z0-9+/]{100,}={0,3}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 105,
+      "maxLength": 5000
+    },
+    {
+      "name": "Fly.io Machine Token (fm2)",
+      "regex": "\\bfm2_[A-Za-z0-9+/]{100,}={0,3}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 104,
+      "maxLength": 5000
+    },
+    {
+      "name": "Frame.io API Token",
+      "regex": "\\bfio-u-[a-zA-Z0-9\\-_=]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 70,
+      "maxLength": 70
+    },
+    {
+      "name": "Grafana API Key (eyJrIjoi)",
+      "regex": "\\beyJrIjoi[A-Za-z0-9]{70,400}={0,3}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 78,
+      "maxLength": 410
+    },
+    {
+      "name": "Grafana Cloud API Token",
+      "regex": "\\bglc_[A-Za-z0-9+/]{32,400}={0,3}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 36,
+      "maxLength": 410
+    },
+    {
+      "name": "Grafana Service Account Token",
+      "regex": "\\bglsa_[A-Za-z0-9]{32}_[A-Fa-f0-9]{8}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 46,
+      "maxLength": 46
+    },
+    {
+      "name": "HashiCorp Terraform API Token",
+      "regex": "\\b[a-z0-9]{14}\\.atlasv1\\.[a-z0-9\\-_=]{60,70}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 83,
+      "maxLength": 93
+    },
+    {
+      "name": "Hugging Face Organization Token",
+      "regex": "\\bapi_org_[a-z]{34}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 42,
+      "maxLength": 42
+    },
+    {
+      "name": "Infracost API Key",
+      "regex": "\\bico-[A-Za-z0-9]{32}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    {
+      "name": "Netlify Personal Access Token",
+      "regex": "\\bnfp_[a-zA-Z0-9_]{36}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 40,
+      "maxLength": 40
+    },
+    {
+      "name": "Notion API Token",
+      "regex": "\\bntn_[0-9]{11}[A-Za-z0-9]{35}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 50,
+      "maxLength": 50
+    },
+    {
+      "name": "OpenAI Admin API Key",
+      "regex": "\\bsk-admin-[A-Za-z0-9_-]{20,200}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 29,
+      "maxLength": 209
+    },
+    {
+      "name": "OpenShift Pull Secret Token",
+      "regex": "\\bsha256~[A-Za-z0-9_-]{43}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 50,
+      "maxLength": 50
+    },
+    {
+      "name": "Perplexity API Key",
+      "regex": "\\bpplx-[A-Za-z0-9]{48}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 53,
+      "maxLength": 53
+    },
+    {
+      "name": "PlanetScale API Token",
+      "regex": "\\bpscale_tkn_[A-Za-z0-9=._-]{32,64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 43,
+      "maxLength": 75
+    },
+    {
+      "name": "PlanetScale OAuth Token",
+      "regex": "\\bpscale_oauth_[A-Za-z0-9=._-]{32,64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 45,
+      "maxLength": 77
+    },
+    {
+      "name": "PlanetScale Password Token",
+      "regex": "\\bpscale_pw_[A-Za-z0-9=._-]{32,64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 42,
+      "maxLength": 74
+    },
+    {
+      "name": "Postman API Key",
+      "regex": "\\bPMAK-[A-Fa-f0-9]{24}-[A-Fa-f0-9]{34}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    {
+      "name": "Pulumi API Token",
+      "regex": "\\bpul-[a-f0-9]{40}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 44,
+      "maxLength": 44
+    },
+    {
+      "name": "ReadMe API Key",
+      "regex": "\\brdme_[a-z0-9]{70}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 75,
+      "maxLength": 75
+    },
+    {
+      "name": "RubyGems API Key",
+      "regex": "\\brubygems_[a-f0-9]{48}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 57,
+      "maxLength": 57
+    },
+    {
+      "name": "Sentry Auth Token",
+      "regex": "\\bsntrys_eyJpYXQiO[A-Za-z0-9+/]{10,200}(?:LCJyZWdpb25fdXJs|InJlZ2lvbl91cmwi|cmVnaW9uX3VybCI6)[A-Za-z0-9+/]{10,200}={0,2}_[A-Za-z0-9+/]{43}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 80,
+      "maxLength": 600
+    },
+    {
+      "name": "Sentry User Token",
+      "regex": "\\bsntryu_[a-f0-9]{64}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    {
+      "name": "Slack Configuration Access Token",
+      "regex": "\\bxoxe\\.xox[bp]-\\d-[A-Z0-9]{163,166}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 174,
+      "maxLength": 178
+    },
+    {
+      "name": "Slack Configuration Refresh Token",
+      "regex": "\\bxoxe-\\d-[A-Z0-9]{146}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 153,
+      "maxLength": 153
+    },
+    {
+      "name": "Slack Legacy Token (xoxs/xoxo)",
+      "regex": "\\bxox[os]-\\d+-\\d+-\\d+-[a-fA-F0-9]{10,64}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 24,
+      "maxLength": 100
+    },
+    {
+      "name": "Sourcegraph Access Token",
+      "regex": "\\bsgp_(?:[A-Fa-f0-9]{16}|local)_[A-Fa-f0-9]{40}\\b|\\bsgp_[A-Fa-f0-9]{40}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 44,
+      "maxLength": 60
+    },
+    {
+      "name": "Stripe Webhook Signing Secret",
+      "regex": "\\bwhsec_[A-Za-z0-9]{16,200}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 22,
+      "maxLength": 206
+    },
+    {
+      "name": "GitLab PAT (v2)",
+      "regex": "\\bglpat-[0-9A-Za-z_-]{27,300}\\.[0-9a-z]{9}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 43,
+      "maxLength": 320
+    },
+    {
+      "name": "GitLab Runner Token (glrt)",
+      "regex": "\\bglrt-[0-9A-Za-z_\\-]{20,}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 25,
+      "maxLength": 320
+    },
+    {
+      "name": "GitLab Runner Token (glrt-t)",
+      "regex": "\\bglrt-t\\d_[0-9A-Za-z_\\-]{27,300}\\.[0-9a-z]{9}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 46,
+      "maxLength": 330
+    },
+    {
+      "name": "New Relic Browser API Key",
+      "regex": "\\bNRJS-[a-f0-9]{19}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 24,
+      "maxLength": 24
+    },
+    {
+      "name": "New Relic Insert Key",
+      "regex": "\\bNRII-[a-z0-9-]{32}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 37,
+      "maxLength": 37
+    },
+    {
+      "name": "New Relic User API Key",
+      "regex": "\\bNRAK-[a-z0-9]{27}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 32,
+      "maxLength": 32
+    },
+    {
       "name": "JavaScript eval() Usage",
       "regex": "\\beval\\s*\\(",
       "flags": "gi",
@@ -1149,152 +1977,6 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 50,
       "maxLength": 5000
-    },
-    {
-      "name": "AWS Temporary Access Key ID",
-      "regex": "\\bASIA[0-9A-Z]{16}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 20,
-      "maxLength": 20
-    },
-    {
-      "name": "GitHub Fine-Grained PAT",
-      "regex": "\\bgithub_pat_[a-zA-Z0-9_]{82}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 93,
-      "maxLength": 93
-    },
-    {
-      "name": "GitHub Actions Token",
-      "regex": "\\bghs_[a-zA-Z0-9]{36}\\b",
-      "flags": "g",
-      "severity": "HIGH",
-      "confidence": "HIGH",
-      "minLength": 40,
-      "maxLength": 40
-    },
-    {
-      "name": "Anthropic API Key",
-      "regex": "\\bsk-ant-[a-zA-Z0-9_-]{20,120}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 27,
-      "maxLength": 130
-    },
-    {
-      "name": "OpenAI Project API Key",
-      "regex": "\\bsk-proj-[a-zA-Z0-9_-]{20,120}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 28,
-      "maxLength": 130
-    },
-    {
-      "name": "OpenAI Service Account Key",
-      "regex": "\\bsk-svcacct-[a-zA-Z0-9_-]{20,120}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 31,
-      "maxLength": 140
-    },
-    {
-      "name": "Hugging Face Token",
-      "regex": "\\bhf_[A-Za-z0-9]{30,80}\\b",
-      "flags": "g",
-      "severity": "HIGH",
-      "confidence": "HIGH",
-      "minLength": 33,
-      "maxLength": 83
-    },
-    {
-      "name": "PyPI API Token",
-      "regex": "\\bpypi-[A-Za-z0-9_-]{60,120}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 65,
-      "maxLength": 125
-    },
-    {
-      "name": "Sendinblue API Key",
-      "regex": "\\bxkeysib-[a-zA-Z0-9]{64}-[a-zA-Z0-9]{16}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 90,
-      "maxLength": 90
-    },
-    {
-      "name": "Notion Internal Token",
-      "regex": "\\bsecret_[A-Za-z0-9]{43}\\b",
-      "flags": "g",
-      "severity": "HIGH",
-      "confidence": "HIGH",
-      "minLength": 50,
-      "maxLength": 50
-    },
-    {
-      "name": "Databricks Personal Access Token",
-      "regex": "\\bdapi[a-f0-9]{32}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 36,
-      "maxLength": 36
-    },
-    {
-      "name": "Azure Storage Connection String",
-      "regex": "DefaultEndpointsProtocol=https;AccountName=[^;\\s]+;AccountKey=[A-Za-z0-9+/=]{64,};EndpointSuffix=[^;\\s]+",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 80,
-      "maxLength": 300
-    },
-    {
-      "name": "Google OAuth Client Secret",
-      "regex": "\\bGOCSPX-[A-Za-z0-9_-]{28,40}\\b",
-      "flags": "g",
-      "severity": "CRITICAL",
-      "confidence": "HIGH",
-      "minLength": 35,
-      "maxLength": 50
-    },
-    {
-      "name": "Basic Auth URL Credentials",
-      "regex": "https?:\\/\\/[^\\s\\/:@\"']+:[^\\s\\/@\"']{4,}@[^\\s\"']+",
-      "flags": "g",
-      "severity": "HIGH",
-      "confidence": "MEDIUM",
-      "minLength": 16,
-      "maxLength": 300
-    },
-    {
-      "name": "Hardcoded Authorization Bearer Assignment",
-      "regex": "(authorization|auth[_-]?header)\\s*[:=]\\s*['\"]bearer\\s+[A-Za-z0-9\\-._~+/]+=*['\"]",
-      "flags": "gi",
-      "severity": "HIGH",
-      "confidence": "HIGH",
-      "category": "Code Vulnerability",
-      "cwe": "CWE-798",
-      "description": "Bearer tokens assigned in code can expose static credentials."
-    },
-    {
-      "name": "LocalStorage Sensitive Token Persistence",
-      "regex": "localStorage\\.setItem\\s*\\(\\s*['\"](?:token|access[_-]?token|auth[_-]?token|jwt|secret|api[_-]?key)['\"]\\s*,",
-      "flags": "gi",
-      "severity": "MEDIUM",
-      "confidence": "HIGH",
-      "category": "Code Vulnerability",
-      "cwe": "CWE-922",
-      "description": "Storing sensitive tokens in localStorage increases XSS exfiltration risk."
     }
   ],
   "whitelistPatterns": [
