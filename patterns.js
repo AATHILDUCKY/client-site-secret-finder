@@ -1149,6 +1149,152 @@ window.SECRET_FINDER_DATA = {
       "confidence": "HIGH",
       "minLength": 50,
       "maxLength": 5000
+    },
+    {
+      "name": "AWS Temporary Access Key ID",
+      "regex": "\\bASIA[0-9A-Z]{16}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 20,
+      "maxLength": 20
+    },
+    {
+      "name": "GitHub Fine-Grained PAT",
+      "regex": "\\bgithub_pat_[a-zA-Z0-9_]{82}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 93,
+      "maxLength": 93
+    },
+    {
+      "name": "GitHub Actions Token",
+      "regex": "\\bghs_[a-zA-Z0-9]{36}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 40,
+      "maxLength": 40
+    },
+    {
+      "name": "Anthropic API Key",
+      "regex": "\\bsk-ant-[a-zA-Z0-9_-]{20,120}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 27,
+      "maxLength": 130
+    },
+    {
+      "name": "OpenAI Project API Key",
+      "regex": "\\bsk-proj-[a-zA-Z0-9_-]{20,120}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 28,
+      "maxLength": 130
+    },
+    {
+      "name": "OpenAI Service Account Key",
+      "regex": "\\bsk-svcacct-[a-zA-Z0-9_-]{20,120}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 31,
+      "maxLength": 140
+    },
+    {
+      "name": "Hugging Face Token",
+      "regex": "\\bhf_[A-Za-z0-9]{30,80}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 33,
+      "maxLength": 83
+    },
+    {
+      "name": "PyPI API Token",
+      "regex": "\\bpypi-[A-Za-z0-9_-]{60,120}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 65,
+      "maxLength": 125
+    },
+    {
+      "name": "Sendinblue API Key",
+      "regex": "\\bxkeysib-[a-zA-Z0-9]{64}-[a-zA-Z0-9]{16}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 90,
+      "maxLength": 90
+    },
+    {
+      "name": "Notion Internal Token",
+      "regex": "\\bsecret_[A-Za-z0-9]{43}\\b",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "minLength": 50,
+      "maxLength": 50
+    },
+    {
+      "name": "Databricks Personal Access Token",
+      "regex": "\\bdapi[a-f0-9]{32}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 36,
+      "maxLength": 36
+    },
+    {
+      "name": "Azure Storage Connection String",
+      "regex": "DefaultEndpointsProtocol=https;AccountName=[^;\\s]+;AccountKey=[A-Za-z0-9+/=]{64,};EndpointSuffix=[^;\\s]+",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 80,
+      "maxLength": 300
+    },
+    {
+      "name": "Google OAuth Client Secret",
+      "regex": "\\bGOCSPX-[A-Za-z0-9_-]{28,40}\\b",
+      "flags": "g",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "minLength": 35,
+      "maxLength": 50
+    },
+    {
+      "name": "Basic Auth URL Credentials",
+      "regex": "https?:\\/\\/[^\\s\\/:@\"']+:[^\\s\\/@\"']{4,}@[^\\s\"']+",
+      "flags": "g",
+      "severity": "HIGH",
+      "confidence": "MEDIUM",
+      "minLength": 16,
+      "maxLength": 300
+    },
+    {
+      "name": "Hardcoded Authorization Bearer Assignment",
+      "regex": "(authorization|auth[_-]?header)\\s*[:=]\\s*['\"]bearer\\s+[A-Za-z0-9\\-._~+/]+=*['\"]",
+      "flags": "gi",
+      "severity": "HIGH",
+      "confidence": "HIGH",
+      "category": "Code Vulnerability",
+      "cwe": "CWE-798",
+      "description": "Bearer tokens assigned in code can expose static credentials."
+    },
+    {
+      "name": "LocalStorage Sensitive Token Persistence",
+      "regex": "localStorage\\.setItem\\s*\\(\\s*['\"](?:token|access[_-]?token|auth[_-]?token|jwt|secret|api[_-]?key)['\"]\\s*,",
+      "flags": "gi",
+      "severity": "MEDIUM",
+      "confidence": "HIGH",
+      "category": "Code Vulnerability",
+      "cwe": "CWE-922",
+      "description": "Storing sensitive tokens in localStorage increases XSS exfiltration risk."
     }
   ],
   "whitelistPatterns": [

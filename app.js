@@ -15,7 +15,9 @@
     visibleFindings: [],
     lastResult: null,
     scanning: false,
-    selectedFinding: null
+    selectedFinding: null,
+    discoveredLinks: [],
+    lastCrawlStats: null
   };
 
   const dom = {
@@ -33,10 +35,23 @@
     crawlDepth: byId("crawlDepth"),
     crawlMaxURLs: byId("crawlMaxURLs"),
     crawlMaxNew: byId("crawlMaxNew"),
+    crawlConcurrency: byId("crawlConcurrency"),
+    crawlIncludeSubdomains: byId("crawlIncludeSubdomains"),
+    crawlOnlyLikelyFiles: byId("crawlOnlyLikelyFiles"),
+    crawlIncludeRegex: byId("crawlIncludeRegex"),
+    crawlExcludeRegex: byId("crawlExcludeRegex"),
+    discoverBtn: byId("discoverBtn"),
+    appendDiscoveredBtn: byId("appendDiscoveredBtn"),
+    clearDiscoveredBtn: byId("clearDiscoveredBtn"),
+    discoveredMeta: byId("discoveredMeta"),
+    discoveredList: byId("discoveredList"),
     falsePositiveFilter: byId("falsePositiveFilter"),
     contextFilter: byId("contextFilter"),
+    deepAnalysis: byId("deepAnalysis"),
+    entropyFilter: byId("entropyFilter"),
     contextLines: byId("contextLines"),
     lineLimit: byId("lineLimit"),
+    entropyMin: byId("entropyMin"),
     scanBtn: byId("scanBtn"),
     clearBtn: byId("clearBtn"),
     sampleBtn: byId("sampleBtn"),
@@ -62,6 +77,7 @@
   const absoluteURLRegex = /https?:\/\/[^\s"'<>]+/g;
   const sourceMapRegex = /sourceMappingURL=([^\s]+)/gm;
   const quotedPathRegex = /["'](\/[^"'?#\s]{1,200}(?:\?[^"'\s]*)?)["']/g;
+  const suspiciousContextRegex = /(secret|token|passwd|password|authorization|bearer|private[_-]?key|credential|oauth|apikey|api[_-]?key)/i;
 
   init();
 
@@ -77,6 +93,9 @@
     });
 
     dom.scanBtn.addEventListener("click", runScan);
+    dom.discoverBtn.addEventListener("click", runDiscoveryOnly);
+    dom.appendDiscoveredBtn.addEventListener("click", appendDiscoveredToURLList);
+    dom.clearDiscoveredBtn.addEventListener("click", clearDiscoveredLinks);
     dom.clearBtn.addEventListener("click", clearAll);
     dom.sampleBtn.addEventListener("click", loadSample);
     dom.severityFilter.addEventListener("change", applyViewFilters);
@@ -88,6 +107,7 @@
     setStatus("Idle", 0);
     renderSummary(null);
     renderFindings([]);
+    renderDiscoveredLinks([], null);
     appendLog(`Ready. Loaded ${state.compiledPatterns.length}/${data.patterns.length} patterns.`);
   }
 
@@ -119,8 +139,7 @@
 
     state.scanning = true;
     setStatus("Collecting sources...", 1);
-    dom.scanBtn.disabled = true;
-    dom.scanBtn.classList.add("opacity-60", "cursor-not-allowed");
+    setActionBusy(true);
     dom.runLog.textContent = "";
 
     const startedAt = performance.now();
@@ -128,6 +147,7 @@
 
     try {
       const options = readOptions();
+      state.lastCrawlStats = null;
       const initialSources = [];
 
       const pasted = dom.pastedContent.value;
@@ -154,18 +174,26 @@
         const baseURL = normalizeBaseURL(options.crawl.baseURL);
         appendLog(`Crawl enabled for ${baseURL} (depth=${options.crawl.depth}, max=${options.crawl.maxURLs}).`);
 
-        const discovered = await crawlDomain(baseURL, options);
-        discoveredURLs += discovered.length;
+        const crawlResult = await crawlDomain(baseURL, options);
+        discoveredURLs += crawlResult.urls.length;
+        renderDiscoveredLinks(crawlResult.urls, crawlResult.stats);
 
-        const fetchedCrawlSources = await fetchScanTargets(discovered, options, 8);
+        const fetchedCrawlSources = await fetchScanTargets(crawlResult.urls, options, 8);
         initialSources.push(...fetchedCrawlSources);
 
-        const additional = discoverAdditionalTargetsFromFetched(baseURL, fetchedCrawlSources, options.crawl.maxNew);
+        const additional = discoverAdditionalTargetsFromFetched(baseURL, fetchedCrawlSources, options.crawl.maxNew, options);
         if (additional.length) {
           appendLog(`Expanded from fetched content: +${additional.length} URL(s).`);
           discoveredURLs += additional.length;
           const expandedSources = await fetchScanTargets(additional, options, 8);
           initialSources.push(...expandedSources);
+
+          const mergedDiscovered = uniqueStrings([...crawlResult.urls, ...additional]);
+          discoveredURLs = mergedDiscovered.length;
+          renderDiscoveredLinks(mergedDiscovered, {
+            ...crawlResult.stats,
+            expandedAdditional: additional.length
+          });
         }
       }
 
@@ -183,7 +211,8 @@
           findings: [],
           scanDurationMs: Math.round(performance.now() - startedAt),
           patternsUsed: state.compiledPatterns.length,
-          falsePositives: 0
+          falsePositives: 0,
+          crawlStats: state.lastCrawlStats || null
         };
         renderSummary(state.lastResult);
         renderFindings([]);
@@ -219,6 +248,16 @@
       if (options.filters.contextWhitelist) {
         filtered = filterContextWhitelist(filtered);
       }
+      if (options.filters.entropy) {
+        filtered = filterWeakEntropyMatches(filtered, options.entropyMin);
+      }
+
+      filtered = filtered
+        .map((finding) => ({
+          ...finding,
+          riskScore: computeRiskScore(finding)
+        }))
+        .sort((a, b) => b.riskScore - a.riskScore);
 
       const durationMs = Math.round(performance.now() - startedAt);
       const result = {
@@ -228,7 +267,8 @@
         findings: filtered,
         scanDurationMs: durationMs,
         patternsUsed: state.compiledPatterns.length,
-        falsePositives: beforeFilter - filtered.length
+        falsePositives: beforeFilter - filtered.length,
+        crawlStats: state.lastCrawlStats || null
       };
 
       state.findings = filtered;
@@ -243,14 +283,89 @@
       setStatus("Failed", 100);
     } finally {
       state.scanning = false;
-      dom.scanBtn.disabled = false;
-      dom.scanBtn.classList.remove("opacity-60", "cursor-not-allowed");
+      setActionBusy(false);
     }
+  }
+
+  async function runDiscoveryOnly() {
+    if (state.scanning) {
+      return;
+    }
+
+    state.scanning = true;
+    setActionBusy(true);
+    setStatus("Discovering links...", 5);
+    dom.runLog.textContent = "";
+
+    try {
+      const options = readOptions();
+      if (!options.crawl.enabled) {
+        throw new Error("enable crawl pipeline before running discovery");
+      }
+
+      const baseURL = normalizeBaseURL(options.crawl.baseURL);
+      appendLog(`Running discovery crawl for ${baseURL}...`);
+      const crawlResult = await crawlDomain(baseURL, options);
+      renderDiscoveredLinks(crawlResult.urls, crawlResult.stats);
+      setStatus(`Discovery complete (${crawlResult.urls.length} URLs)`, 100);
+    } catch (err) {
+      appendLog(`Discovery error: ${err.message || String(err)}`);
+      setStatus("Discovery failed", 100);
+    } finally {
+      state.scanning = false;
+      setActionBusy(false);
+    }
+  }
+
+  function setActionBusy(busy) {
+    const buttons = [dom.scanBtn, dom.discoverBtn, dom.appendDiscoveredBtn, dom.clearDiscoveredBtn];
+    for (const btn of buttons) {
+      btn.disabled = busy;
+      btn.classList.toggle("opacity-60", busy);
+      btn.classList.toggle("cursor-not-allowed", busy);
+    }
+  }
+
+  function renderDiscoveredLinks(urls, stats) {
+    const unique = uniqueStrings(urls || []);
+    state.discoveredLinks = unique;
+    state.lastCrawlStats = stats || null;
+    dom.discoveredList.value = unique.join("\n");
+
+    if (!unique.length) {
+      dom.discoveredMeta.textContent = "No crawl discovery yet.";
+      return;
+    }
+
+    const statsText = stats
+      ? `Visited ${stats.visited}, fetched ${stats.fetched}, skipped ${stats.skippedExternal + stats.skippedByFilter}, errors ${stats.fetchErrors}`
+      : "No crawl stats";
+    dom.discoveredMeta.textContent = `${unique.length} discovered URL(s). ${statsText}.`;
+  }
+
+  function appendDiscoveredToURLList() {
+    if (!state.discoveredLinks.length) {
+      appendLog("No discovered links available to append.");
+      return;
+    }
+
+    const current = parseURLList(dom.urlList.value);
+    const merged = uniqueStrings([...current, ...state.discoveredLinks]).sort((a, b) => a.localeCompare(b));
+    dom.urlList.value = merged.join("\n");
+    appendLog(`Added ${state.discoveredLinks.length} discovered URL(s) into URL sources.`);
+  }
+
+  function clearDiscoveredLinks() {
+    renderDiscoveredLinks([], null);
+    appendLog("Cleared discovered URL list.");
   }
 
   function readOptions() {
     const timeoutSec = clampNumber(Number(dom.fetchTimeout.value), 3, 120, 20);
     const maxBodyMB = clampNumber(Number(dom.maxBodyMB.value), 1, 25, 4);
+    const crawlEnabled = dom.crawlEnabled.checked;
+    const includeRegex = crawlEnabled ? compileOptionalRegex(dom.crawlIncludeRegex.value) : null;
+    const excludeRegex = crawlEnabled ? compileOptionalRegex(dom.crawlExcludeRegex.value) : null;
 
     return {
       timeoutSec,
@@ -259,16 +374,48 @@
       contextLines: clampNumber(Number(dom.contextLines.value), 0, 5, 1),
       filters: {
         falsePositive: dom.falsePositiveFilter.checked,
-        contextWhitelist: dom.contextFilter.checked
+        contextWhitelist: dom.contextFilter.checked,
+        entropy: dom.entropyFilter.checked
       },
+      deepAnalysis: dom.deepAnalysis.checked,
+      entropyMin: clampNumber(Number(dom.entropyMin.value), 1, 6, 3.2),
       crawl: {
-        enabled: dom.crawlEnabled.checked,
+        enabled: crawlEnabled,
         baseURL: dom.crawlBaseURL.value.trim(),
         depth: clampNumber(Number(dom.crawlDepth.value), 1, 6, 2),
         maxURLs: clampNumber(Number(dom.crawlMaxURLs.value), 10, 5000, 250),
-        maxNew: clampNumber(Number(dom.crawlMaxNew.value), 0, 2000, 200)
+        maxNew: clampNumber(Number(dom.crawlMaxNew.value), 0, 2000, 200),
+        concurrency: clampNumber(Number(dom.crawlConcurrency.value), 1, 12, 4),
+        includeSubdomains: dom.crawlIncludeSubdomains.checked,
+        onlyLikelyFiles: dom.crawlOnlyLikelyFiles.checked,
+        includeRegex,
+        excludeRegex
       }
     };
+  }
+
+  function compileOptionalRegex(raw) {
+    const value = String(raw || "").trim();
+    if (!value) {
+      return null;
+    }
+
+    let pattern = value;
+    let flags = "i";
+
+    const slashForm = value.match(/^\/(.+)\/([a-z]*)$/i);
+    if (slashForm) {
+      pattern = slashForm[1];
+      flags = slashForm[2] || "i";
+    }
+
+    flags = flags.replaceAll("g", "").replaceAll("y", "");
+
+    try {
+      return new RegExp(pattern, flags);
+    } catch (err) {
+      throw new Error(`invalid crawl regex: ${value}`);
+    }
   }
 
   async function loadUploadedFiles() {
@@ -341,55 +488,109 @@
     const root = new URL(baseURL);
     const rootHost = root.hostname;
 
-    const queue = [{ url: baseURL, depth: 0 }];
-    const visited = new Set([baseURL]);
-    const discovered = [];
+    const discoveredSet = new Set([baseURL]);
+    const visitedSet = new Set();
+    const queuedSet = new Set([baseURL]);
+    let frontier = [{ url: baseURL, depth: 0 }];
 
-    while (queue.length > 0 && discovered.length < options.crawl.maxURLs) {
-      const current = queue.shift();
-      discovered.push(current.url);
+    const stats = {
+      host: rootHost,
+      depth: options.crawl.depth,
+      maxURLs: options.crawl.maxURLs,
+      visited: 0,
+      fetched: 0,
+      queued: 1,
+      skippedExternal: 0,
+      skippedByFilter: 0,
+      fetchErrors: 0,
+      disclosureQueued: 0,
+      expandedAdditional: 0
+    };
 
-      if (current.depth >= options.crawl.depth) {
-        continue;
-      }
+    while (frontier.length > 0 && discoveredSet.size < options.crawl.maxURLs) {
+      const nextFrontier = [];
 
-      try {
-        const { content } = await fetchURLContent(current.url, options.timeoutSec, options.maxBodyBytes);
-        const extracted = extractURLsFromContent(current.url, content);
-
-        for (const found of extracted) {
-          if (!isInDomainScope(found, rootHost)) {
-            continue;
-          }
-          if (visited.has(found)) {
-            continue;
-          }
-          visited.add(found);
-          queue.push({ url: found, depth: current.depth + 1 });
-          if (visited.size >= options.crawl.maxURLs) {
-            break;
-          }
+      await runConcurrent(frontier, options.crawl.concurrency, async (current) => {
+        if (visitedSet.has(current.url) || discoveredSet.size >= options.crawl.maxURLs) {
+          return;
         }
-      } catch (err) {
-        appendLog(`Crawl miss: ${current.url} -> ${err.message || String(err)}`);
-      }
+        visitedSet.add(current.url);
+        stats.visited += 1;
+
+        if (current.depth >= options.crawl.depth) {
+          return;
+        }
+
+        try {
+          const { content } = await fetchURLContent(current.url, options.timeoutSec, options.maxBodyBytes);
+          stats.fetched += 1;
+          const extracted = extractURLsFromContent(current.url, content);
+
+          for (const found of extracted) {
+            if (!isInDomainScope(found, rootHost, options.crawl.includeSubdomains)) {
+              stats.skippedExternal += 1;
+              continue;
+            }
+            if (!passesCrawlFilters(found, options.crawl)) {
+              stats.skippedByFilter += 1;
+              continue;
+            }
+
+            if (discoveredSet.size < options.crawl.maxURLs) {
+              discoveredSet.add(found);
+            }
+
+            if (queuedSet.has(found)) {
+              continue;
+            }
+
+            const crawlable = looksLikePage(found) || isLikelyScanTarget(found, "");
+            if (options.crawl.onlyLikelyFiles && !crawlable) {
+              stats.skippedByFilter += 1;
+              continue;
+            }
+
+            queuedSet.add(found);
+            stats.queued += 1;
+            nextFrontier.push({ url: found, depth: current.depth + 1 });
+          }
+        } catch (err) {
+          stats.fetchErrors += 1;
+          appendLog(`Crawl miss: ${current.url} -> ${err.message || String(err)}`);
+        }
+      });
+
+      frontier = nextFrontier;
     }
 
     for (const probe of buildDisclosureURLs(baseURL)) {
-      if (discovered.length >= options.crawl.maxURLs) {
+      if (discoveredSet.size >= options.crawl.maxURLs) {
         break;
       }
-      if (!visited.has(probe)) {
-        visited.add(probe);
-        discovered.push(probe);
+      if (!isInDomainScope(probe, rootHost, options.crawl.includeSubdomains)) {
+        continue;
       }
+      if (!passesCrawlFilters(probe, options.crawl)) {
+        continue;
+      }
+      discoveredSet.add(probe);
+      stats.disclosureQueued += 1;
     }
 
-    appendLog(`Crawl discovered ${discovered.length} URL(s).`);
-    return uniqueStrings(discovered).slice(0, options.crawl.maxURLs);
+    const discovered = prioritizeCrawlTargets(Array.from(discoveredSet), options.crawl.onlyLikelyFiles)
+      .slice(0, options.crawl.maxURLs);
+
+    appendLog(`Crawl discovered ${discovered.length} URL(s), visited ${stats.visited}, fetch errors ${stats.fetchErrors}.`);
+    return {
+      urls: discovered,
+      stats: {
+        ...stats,
+        discovered: discovered.length
+      }
+    };
   }
 
-  function discoverAdditionalTargetsFromFetched(baseURL, fetchedSources, maxNew) {
+  function discoverAdditionalTargetsFromFetched(baseURL, fetchedSources, maxNew, options) {
     if (maxNew <= 0) {
       return [];
     }
@@ -407,7 +608,13 @@
     for (const source of fetchedSources) {
       const extracted = extractURLsFromContent(source.source, source.content);
       for (const urlValue of extracted) {
-        if (!isInDomainScope(urlValue, rootHost)) {
+        if (!isInDomainScope(urlValue, rootHost, options.crawl.includeSubdomains)) {
+          continue;
+        }
+        if (!passesCrawlFilters(urlValue, options.crawl)) {
+          continue;
+        }
+        if (options.crawl.onlyLikelyFiles && !isLikelyScanTarget(urlValue, "") && !looksLikePage(urlValue)) {
           continue;
         }
         if (seen.has(urlValue)) {
@@ -431,7 +638,7 @@
       }
     }
 
-    return out;
+    return prioritizeCrawlTargets(out, options.crawl.onlyLikelyFiles).slice(0, maxNew);
   }
 
   async function scanContent(sourceObj, options, progressTick) {
@@ -444,33 +651,45 @@
         scanLine = scanLine.slice(0, options.lineLimit);
       }
 
-      for (const p of state.compiledPatterns) {
-        const regex = p.regexObj;
-        regex.lastIndex = 0;
-        let match;
+      const variants = buildLineVariants(scanLine, options.deepAnalysis);
+      const emitted = new Set();
 
-        while ((match = regex.exec(scanLine)) !== null) {
-          const matchedText = match[0] || "";
-          if (matchedText.length >= 3) {
-            const startIdx = match.index;
-            findings.push({
-              lineNumber: lineIdx + 1,
-              column: startIdx + 1,
-              source: sourceObj.source,
-              patternName: p.name,
-              matchedText,
-              context: getContext(lines, lineIdx + 1, options.contextLines),
-              severity: defaultString(p.severity, "MEDIUM"),
-              confidence: defaultString(p.confidence, "MEDIUM"),
-              category: defaultString(p.category, "Secrets Exposure"),
-              cwe: defaultString(p.cwe, "N/A"),
-              description: defaultString(p.description, p.name),
-              function: detectFunctionBehind(scanLine, startIdx)
-            });
-          }
+      for (const variant of variants) {
+        for (const p of state.compiledPatterns) {
+          const regex = p.regexObj;
+          regex.lastIndex = 0;
+          let match;
 
-          if (regex.lastIndex === match.index) {
-            regex.lastIndex += 1;
+          while ((match = regex.exec(variant.value)) !== null) {
+            const matchedText = match[0] || "";
+            if (matchedText.length >= 3) {
+              const bestColumn = findMatchColumn(scanLine, matchedText, match.index);
+              const dedupeKey = `${lineIdx}:${p.name}:${bestColumn}:${matchedText.slice(0, 48)}`;
+
+              if (!emitted.has(dedupeKey)) {
+                emitted.add(dedupeKey);
+                findings.push({
+                  lineNumber: lineIdx + 1,
+                  column: bestColumn + 1,
+                  source: sourceObj.source,
+                  patternName: p.name,
+                  matchedText,
+                  context: getContext(lines, lineIdx + 1, options.contextLines),
+                  severity: defaultString(p.severity, "MEDIUM"),
+                  confidence: defaultString(p.confidence, "MEDIUM"),
+                  category: defaultString(p.category, "Secrets Exposure"),
+                  cwe: defaultString(p.cwe, "N/A"),
+                  description: defaultString(p.description, p.name),
+                  function: detectFunctionBehind(scanLine, bestColumn),
+                  lineVariant: variant.kind,
+                  entropy: calculateShannonEntropy(matchedText)
+                });
+              }
+            }
+
+            if (regex.lastIndex === match.index) {
+              regex.lastIndex += 1;
+            }
           }
         }
       }
@@ -498,7 +717,7 @@
       }
 
       const pattern = state.patternMap.get(finding.patternName) || { name: finding.patternName };
-      if (isLikelyFalsePositive(finding.matchedText, pattern)) {
+      if (isLikelyFalsePositive(finding, pattern)) {
         continue;
       }
 
@@ -522,7 +741,23 @@
     });
   }
 
-  function isLikelyFalsePositive(matchValue, pattern) {
+  function filterWeakEntropyMatches(findings, entropyMin) {
+    return findings.filter((finding) => {
+      const pattern = state.patternMap.get(finding.patternName) || {};
+      const strongConfidence = String(pattern.confidence || finding.confidence || "").toUpperCase() === "HIGH";
+      const hasSensitiveHint = suspiciousContextRegex.test(String(finding.context || "")) || suspiciousContextRegex.test(String(finding.patternName || ""));
+
+      if (strongConfidence || hasSensitiveHint) {
+        return true;
+      }
+
+      const entropy = Number(finding.entropy || 0);
+      return entropy >= entropyMin;
+    });
+  }
+
+  function isLikelyFalsePositive(finding, pattern) {
+    const matchValue = String(finding.matchedText || "");
     const lower = String(matchValue).toLowerCase();
 
     for (const term of data.whitelistPatterns || []) {
@@ -545,6 +780,10 @@
       }
     } catch (err) {
       // ignore hash errors
+    }
+
+    if (finding.lineVariant && finding.lineVariant !== "raw" && matchValue.length < 6) {
+      return true;
     }
 
     let repeated = 0;
@@ -609,6 +848,166 @@
     }
 
     return best || fallback || "N/A";
+  }
+
+  function buildLineVariants(line, deepAnalysis) {
+    const variants = [{ kind: "raw", value: line }];
+    if (!deepAnalysis) {
+      return variants;
+    }
+
+    const seen = new Set([line]);
+
+    const decodedEscaped = decodeEscapedSequences(line);
+    if (decodedEscaped && !seen.has(decodedEscaped)) {
+      seen.add(decodedEscaped);
+      variants.push({ kind: "decoded-escape", value: decodedEscaped });
+    }
+
+    const decodedURL = decodeURISafe(line);
+    if (decodedURL && !seen.has(decodedURL)) {
+      seen.add(decodedURL);
+      variants.push({ kind: "decoded-uri", value: decodedURL });
+    }
+
+    for (const decodedChunk of decodeBase64Chunks(line, 4)) {
+      if (!seen.has(decodedChunk)) {
+        seen.add(decodedChunk);
+        variants.push({ kind: "decoded-base64", value: decodedChunk });
+      }
+    }
+
+    return variants;
+  }
+
+  function decodeEscapedSequences(value) {
+    const line = String(value || "");
+    if (!/\\[ux]/.test(line)) {
+      return "";
+    }
+
+    return line
+      .replace(/\\x([0-9a-fA-F]{2})/g, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)))
+      .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)));
+  }
+
+  function decodeURISafe(value) {
+    const line = String(value || "");
+    if (!/%[0-9a-fA-F]{2}/.test(line)) {
+      return "";
+    }
+
+    try {
+      return decodeURIComponent(line);
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function decodeBase64Chunks(value, maxChunks) {
+    const out = [];
+    const raw = String(value || "");
+    const chunks = raw.match(/[A-Za-z0-9+/]{20,}={0,2}/g) || [];
+
+    for (const chunk of chunks) {
+      if (out.length >= maxChunks) {
+        break;
+      }
+      const decoded = decodeBase64Safe(chunk);
+      if (!decoded) {
+        continue;
+      }
+      if (decoded.length < 10) {
+        continue;
+      }
+      if (!/[A-Za-z]/.test(decoded)) {
+        continue;
+      }
+      out.push(decoded);
+    }
+
+    return out;
+  }
+
+  function decodeBase64Safe(chunk) {
+    try {
+      if (chunk.length % 4 !== 0) {
+        return "";
+      }
+      const decoded = atob(chunk);
+      if (!/^[\x09\x0A\x0D\x20-\x7E]+$/.test(decoded)) {
+        return "";
+      }
+      return decoded;
+    } catch (err) {
+      return "";
+    }
+  }
+
+  function findMatchColumn(rawLine, matchedText, fallback) {
+    const direct = rawLine.indexOf(matchedText);
+    if (direct >= 0) {
+      return direct;
+    }
+    return Math.max(0, fallback);
+  }
+
+  function calculateShannonEntropy(value) {
+    const input = String(value || "");
+    if (!input) {
+      return 0;
+    }
+
+    const freq = new Map();
+    for (const ch of input) {
+      freq.set(ch, (freq.get(ch) || 0) + 1);
+    }
+
+    let entropy = 0;
+    for (const count of freq.values()) {
+      const p = count / input.length;
+      entropy -= p * Math.log2(p);
+    }
+
+    return Number(entropy.toFixed(3));
+  }
+
+  function computeRiskScore(finding) {
+    const severity = String(finding.severity || "").toUpperCase();
+    const confidence = String(finding.confidence || "").toUpperCase();
+    const entropy = Number(finding.entropy || 0);
+    const context = String(finding.context || "");
+
+    let score = 35;
+    if (severity === "CRITICAL") {
+      score = 88;
+    } else if (severity === "HIGH") {
+      score = 72;
+    } else if (severity === "MEDIUM") {
+      score = 56;
+    }
+
+    if (confidence === "HIGH") {
+      score += 8;
+    } else if (confidence === "MEDIUM") {
+      score += 4;
+    }
+
+    score += Math.min(12, Math.round(entropy * 2));
+
+    if (suspiciousContextRegex.test(context) || suspiciousContextRegex.test(String(finding.patternName || ""))) {
+      score += 8;
+    }
+
+    if (finding.lineVariant && finding.lineVariant !== "raw") {
+      score += 4;
+    }
+
+    if (String(finding.cwe || "").toUpperCase() !== "N/A") {
+      score += 2;
+    }
+
+    return Math.max(0, Math.min(100, score));
   }
 
   function prepareContentForScan(rawURL, contentType, content) {
@@ -795,13 +1194,44 @@
     return parsed.toString();
   }
 
-  function isInDomainScope(rawURL, rootHost) {
+  function isInDomainScope(rawURL, rootHost, includeSubdomains) {
     try {
       const parsed = new URL(rawURL);
-      return parsed.hostname === rootHost;
+      const host = parsed.hostname;
+      if (host === rootHost) {
+        return true;
+      }
+      return Boolean(includeSubdomains && host.endsWith(`.${rootHost}`));
     } catch (err) {
       return false;
     }
+  }
+
+  function passesCrawlFilters(urlValue, crawlOptions) {
+    if (crawlOptions.includeRegex && !crawlOptions.includeRegex.test(urlValue)) {
+      return false;
+    }
+    if (crawlOptions.excludeRegex && crawlOptions.excludeRegex.test(urlValue)) {
+      return false;
+    }
+    return true;
+  }
+
+  function prioritizeCrawlTargets(urls, prioritizeLikely) {
+    if (!prioritizeLikely) {
+      return uniqueStrings(urls);
+    }
+
+    const sorted = uniqueStrings(urls).sort((a, b) => {
+      const aLikely = isLikelyScanTarget(a, "") ? 1 : 0;
+      const bLikely = isLikelyScanTarget(b, "") ? 1 : 0;
+      if (aLikely !== bLikely) {
+        return bLikely - aLikely;
+      }
+      return a.localeCompare(b);
+    });
+
+    return sorted;
   }
 
   function buildDisclosureURLs(baseURL) {
@@ -831,6 +1261,13 @@
     }
 
     return /\.(json|txt|xml|env|log|ya?ml|md)(?:$|[?#])/i.test(rawURL);
+  }
+
+  function isLikelyScanTarget(rawURL, contentType) {
+    if (looksLikeJavaScript(rawURL, contentType)) {
+      return true;
+    }
+    return /\.(json|txt|xml|env|log|ya?ml|md|config|conf|ini|properties|sh)(?:$|[?#])/i.test(String(rawURL || ""));
   }
 
   function looksLikeJavaScript(rawURL, contentType) {
@@ -887,6 +1324,7 @@
       ["Sources", result.totalFiles],
       ["Discovered URLs", result.discoveredURLs],
       ["Findings", result.totalMatches],
+      ["Top Risk", `${Math.max(0, ...result.findings.map((f) => Number(f.riskScore || 0)))} / 100`],
       ["Patterns", result.patternsUsed],
       ["Filtered", result.falsePositives],
       ["Duration", formatDuration(result.scanDurationMs)]
@@ -901,14 +1339,17 @@
       `)
       .join("");
 
-    dom.findingsMeta.textContent = `Critical ${severityCounts.CRITICAL}, High ${severityCounts.HIGH}, Medium ${severityCounts.MEDIUM}, Low ${severityCounts.LOW}`;
+    const crawlMeta = result.crawlStats
+      ? ` | Crawl visited ${result.crawlStats.visited}, errors ${result.crawlStats.fetchErrors}`
+      : "";
+    dom.findingsMeta.textContent = `Critical ${severityCounts.CRITICAL}, High ${severityCounts.HIGH}, Medium ${severityCounts.MEDIUM}, Low ${severityCounts.LOW}${crawlMeta}`;
   }
 
   function renderFindings(findings) {
     state.visibleFindings = findings;
 
     if (!findings.length) {
-      dom.resultsBody.innerHTML = "<tr><td colspan='7' class='px-3 py-6 text-center text-slate-400'>No findings</td></tr>";
+      dom.resultsBody.innerHTML = "<tr><td colspan='8' class='px-3 py-6 text-center text-slate-400'>No findings</td></tr>";
       dom.contextPanel.classList.add("hidden");
       return;
     }
@@ -921,6 +1362,7 @@
       return `
         <tr data-idx="${idx}" class="cursor-pointer transition hover:bg-slate-800/60">
           <td class="px-3 py-2"><span class="rounded-full px-2 py-0.5 text-xs font-semibold ${badgeClass}">${escapeHTML(sev)}</span></td>
+          <td class="px-3 py-2 font-mono text-xs text-emerald-200">${escapeHTML(String(f.riskScore || 0))}</td>
           <td class="px-3 py-2 text-slate-200">${escapeHTML(f.patternName)}</td>
           <td class="max-w-[280px] truncate px-3 py-2 font-mono text-xs text-slate-300">${escapeHTML(f.source)}</td>
           <td class="px-3 py-2 font-mono text-xs text-slate-300">${f.lineNumber}:${f.column}</td>
@@ -961,7 +1403,9 @@
         f.category,
         f.cwe,
         f.function,
-        f.description
+        f.description,
+        f.lineVariant,
+        f.riskScore
       ].join(" ").toLowerCase();
 
       return bag.includes(query);
@@ -977,7 +1421,7 @@
     }
 
     state.selectedFinding = finding;
-    dom.contextTitle.textContent = `${finding.patternName} - ${finding.source}:${finding.lineNumber}:${finding.column}`;
+    dom.contextTitle.textContent = `${finding.patternName} [risk ${finding.riskScore || 0}] - ${finding.source}:${finding.lineNumber}:${finding.column}`;
     dom.contextContent.textContent = finding.context || "N/A";
     dom.contextPanel.classList.remove("hidden");
   }
@@ -1000,12 +1444,15 @@
 
     const headers = [
       "severity",
+      "risk_score",
       "confidence",
       "pattern_name",
       "source",
       "line",
       "column",
       "function",
+      "line_variant",
+      "entropy",
       "category",
       "cwe",
       "description",
@@ -1017,12 +1464,15 @@
     for (const f of findings) {
       const values = [
         f.severity,
+        f.riskScore,
         f.confidence,
         f.patternName,
         f.source,
         f.lineNumber,
         f.column,
         f.function,
+        f.lineVariant,
+        f.entropy,
         f.category,
         f.cwe,
         f.description,
@@ -1049,12 +1499,17 @@
     out.push(`Patterns: ${state.lastResult.patternsUsed}`);
     out.push(`Filtered: ${state.lastResult.falsePositives}`);
     out.push(`Duration: ${formatDuration(state.lastResult.scanDurationMs)}`);
+    if (state.lastResult.crawlStats) {
+      out.push(`Crawl: visited=${state.lastResult.crawlStats.visited}, fetched=${state.lastResult.crawlStats.fetched}, errors=${state.lastResult.crawlStats.fetchErrors}`);
+    }
     out.push("");
 
     for (const f of state.visibleFindings) {
       out.push(`[${f.severity}] ${f.patternName}`);
+      out.push(`Risk: ${f.riskScore}`);
       out.push(`Source: ${f.source}:${f.lineNumber}:${f.column}`);
       out.push(`Function: ${f.function}`);
+      out.push(`Line Variant: ${f.lineVariant || "raw"} | Entropy: ${Number(f.entropy || 0).toFixed(2)}`);
       out.push(`Category/CWE: ${f.category}/${f.cwe}`);
       out.push(`Description: ${f.description}`);
       out.push(`Matched: ${f.matchedText}`);
@@ -1075,15 +1530,29 @@
     dom.pastedContent.value = "";
     dom.crawlEnabled.checked = false;
     dom.crawlBaseURL.value = "";
+    dom.crawlDepth.value = "2";
+    dom.crawlMaxURLs.value = "250";
+    dom.crawlMaxNew.value = "200";
+    dom.crawlConcurrency.value = "4";
+    dom.crawlIncludeSubdomains.checked = false;
+    dom.crawlOnlyLikelyFiles.checked = true;
+    dom.crawlIncludeRegex.value = "";
+    dom.crawlExcludeRegex.value = "";
+    dom.deepAnalysis.checked = true;
+    dom.entropyFilter.checked = true;
+    dom.entropyMin.value = "3.2";
     dom.severityFilter.value = "ALL";
     dom.searchFilter.value = "";
 
     state.findings = [];
     state.visibleFindings = [];
     state.lastResult = null;
+    state.discoveredLinks = [];
+    state.lastCrawlStats = null;
 
     renderSummary(null);
     renderFindings([]);
+    renderDiscoveredLinks([], null);
     setStatus("Idle", 0);
     dom.runLog.textContent = "";
     dom.findingsMeta.textContent = "Run a scan to see results.";
@@ -1091,6 +1560,7 @@
 
   function loadSample() {
     dom.urlList.value = "";
+    renderDiscoveredLinks([], null);
     dom.pasteName.value = "sample-app.js";
     dom.pasteType.value = "application/javascript";
     dom.pastedContent.value = [
